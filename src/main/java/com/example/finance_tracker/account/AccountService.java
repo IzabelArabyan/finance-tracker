@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.time.Instant;
@@ -24,6 +25,13 @@ public class AccountService {
         this.clock = clock;
         create("Main", new BigDecimal("1000.00"));
     }
+    public List<Account> findAll() {
+        return List.copyOf(accounts.values());
+    }
+
+    public Optional<Account> findById(Long id) {
+        return Optional.ofNullable(accounts.get(id));
+    }
 
     public Account create(String name, BigDecimal balance) {
         requireName(name);
@@ -36,6 +44,54 @@ public class AccountService {
         log.info("Created account id={} name={} balance= {}",
                 account.getId(),account.getName(), account.getBalance());
         return account;
+    }
+    public Optional<Account> rename(Long id, String newName) {
+        requireName(newName);
+        Account existing = accounts.get(id);
+        if (existing == null) {
+            return Optional.empty();
+        }
+        Account updated = existing.withName(newName);
+        accounts.put(id, updated);
+        log.info("Renamed account id={} to name={}", id, updated.getName());
+        return Optional.of(updated);
+    }
+
+    public Optional<Account> deposit(Long id, BigDecimal amount) {
+        requirePositive(amount);
+        Account existing = accounts.get(id);
+        if (existing == null) {
+            return Optional.empty();
+        }
+        BigDecimal newBalance = existing.getBalance().add(amount);
+        Account updated = existing.withBalance(newBalance);
+        accounts.put(id, updated);
+        log.info("Deposited {} to account id={}, new balance={}", amount, id, newBalance);
+        return Optional.of(updated);
+    }
+
+    public Optional<Account> withdraw(Long id, BigDecimal amount) {
+        requirePositive(amount);
+        Account existing = accounts.get(id);
+        if (existing == null) {
+            return Optional.empty();
+        }
+        if (existing.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException(id, existing.getBalance(), amount);
+        }
+        BigDecimal newBalance = existing.getBalance().subtract(amount);
+        Account updated = existing.withBalance(newBalance);
+        accounts.put(id, updated);
+        log.info("Withdrew {} from account id={}, new balance={}", amount, id, newBalance);
+        return Optional.of(updated);
+    }
+    public  Optional<Account> delete(Long id) {
+        Account removed = accounts.remove(id);
+        if (removed == null) {
+            return Optional.empty();
+        }
+        log.info("Deleted account id={} name={}", id, removed.getName());
+        return Optional.of(removed);
     }
 
     private static void requireName(String name) {
