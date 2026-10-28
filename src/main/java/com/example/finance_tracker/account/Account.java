@@ -1,13 +1,17 @@
 package com.example.finance_tracker.account;
 
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public class Account {
-    private final Long id;
-    private final String name;
-    private final BigDecimal balance;
-    private final Instant createdAt;
+public final class Account {
+    private Long id;
+    private String name;
+    private BigDecimal balance;
+    private Instant createdAt;
+
+    public Account() {
+    }
 
     public Account(Long id, String name, BigDecimal balance, Instant createdAt) {
         this.id = id;
@@ -20,23 +24,31 @@ public class Account {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public BigDecimal getBalance() {
         return balance;
     }
 
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public Account withName(String newName) {
-        return new Account(id, newName, balance, createdAt);
-    }
-
-    public Account withBalance(BigDecimal newBalance) {
-        return new Account(id, name, newBalance, createdAt);
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }
