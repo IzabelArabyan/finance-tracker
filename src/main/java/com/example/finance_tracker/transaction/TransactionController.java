@@ -2,6 +2,7 @@ package com.example.finance_tracker.transaction;
 
 import com.example.finance_tracker.transaction.dto.TransactionRequest;
 import com.example.finance_tracker.transaction.dto.TransactionResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,12 +34,12 @@ public class TransactionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TransactionResponse create(@RequestBody TransactionRequest request){
+    public TransactionResponse create(@Valid @RequestBody TransactionRequest request){
         return TransactionResponse.from(transactionService.create(request));
     }
 
     @PutMapping("/{id}")
-    public TransactionResponse update(@PathVariable Long id,@RequestBody TransactionRequest request){
+    public TransactionResponse update(@PathVariable Long id, @Valid @RequestBody TransactionRequest request){
         return TransactionResponse.from(transactionService.update(id, request));
     }
 

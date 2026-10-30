@@ -35,7 +35,7 @@ public class AccountServiceTest {
     private AccountService accountService;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-01-15T10:00:00Z"), ZoneId.of("UTC"));
         accountService = new AccountService(accountRepository, transactionRepository, clock);
     }
@@ -43,7 +43,7 @@ public class AccountServiceTest {
     //create
     //1
     @Test
-    void createWithNameAndBalance(){
+    void createWithNameAndBalance() {
         when(accountRepository.save(any(Account.class))).then(returnsFirstArg());
 
         Account result = accountService.create(new CreateAccountRequest("Main", new BigDecimal("1000.00")));
@@ -51,6 +51,7 @@ public class AccountServiceTest {
         assertEquals("Main", result.getName());
         assertEquals(new BigDecimal("1000.00"), result.getBalance());
     }
+
     //2
     @Test
     void createRemovesSpacesAroundTheName() {
@@ -60,6 +61,7 @@ public class AccountServiceTest {
 
         assertEquals("Main", result.getName());
     }
+
     //3
     @Test
     void createWithoutBalanceStartsAtZero() {
@@ -69,6 +71,7 @@ public class AccountServiceTest {
 
         assertEquals(BigDecimal.ZERO, result.getBalance());
     }
+
     //4
     @Test
     void createWithZeroBalanceIsAllowed() {
@@ -78,6 +81,7 @@ public class AccountServiceTest {
 
         assertEquals(BigDecimal.ZERO, result.getBalance());
     }
+
     //5
     @Test
     void createWithTwoDecimalsIsAllowed() {
@@ -106,24 +110,28 @@ public class AccountServiceTest {
         expectBadRequest(new CreateAccountRequest(null, BigDecimal.TEN),
                 "Account name must not be blank");
     }
+
     //8
     @Test
     void createWithEmptyNameGives400() {
         expectBadRequest(new CreateAccountRequest("", BigDecimal.TEN),
                 "Account name must not be blank");
     }
+
     //9
     @Test
     void createWithOnlySpacesInNameGives400() {
         expectBadRequest(new CreateAccountRequest("   ", BigDecimal.TEN),
                 "Account name must not be blank");
     }
+
     //10
     @Test
     void createWithNegativeBalanceGives400() {
         expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("-1")),
                 "Initial balance must be 0 or more");
     }
+
     //11
     @Test
     void createWithThreeDecimalsGives400() {
@@ -144,7 +152,7 @@ public class AccountServiceTest {
     //Update
     //1
     @Test
-    void UpdateChangesTheName(){
+    void UpdateChangesTheName() {
         Account account = new Account(1L, "Old", new BigDecimal("500.00"), NOW);
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).then(returnsFirstArg());
@@ -154,6 +162,7 @@ public class AccountServiceTest {
         assertEquals("New", result.getName());
         verify(accountRepository).save(account);
     }
+
     //2
     @Test
     void updateRemovesSpacesAroundTheName() {
@@ -165,6 +174,7 @@ public class AccountServiceTest {
 
         assertEquals("New", result.getName());
     }
+
     //3
     @Test
     void updateKeepsIdBalanceAndCreatedAt() {
@@ -178,21 +188,25 @@ public class AccountServiceTest {
         assertEquals(new BigDecimal("500.00"), result.getBalance());
         assertEquals(NOW, result.getCreatedAt());
     }
+
     //4
     @Test
     void updateWithNullNameGives400() {
         expectUpdateBadRequest(new UpdateAccountRequest(null));
     }
+
     //5
     @Test
     void updateWithEmptyNameGives400() {
         expectUpdateBadRequest(new UpdateAccountRequest(""));
     }
+
     //6
     @Test
     void updateWithOnlySpacesInNameGives400() {
         expectUpdateBadRequest(new UpdateAccountRequest("   "));
     }
+
     //7
     @Test
     void updateGives404WhenAccountIsMissing() {
@@ -216,4 +230,50 @@ public class AccountServiceTest {
         }
         verify(accountRepository, never()).save(any(Account.class));
     }
+
+    //delete
+    //1
+    @Test
+    void DeleteRemovesTheAccount() {
+        Account account = new Account(1L, "Main", BigDecimal.TEN, NOW);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(transactionRepository.existsByAccountId(1L)).thenReturn(false);
+
+        accountService.delete(1L);
+
+        verify(accountRepository).deleteById(1L);
+    }
+
+    //2
+    @Test
+    void DeleteGives404WhenNoAccount() {
+        when(accountRepository.findById(2L)).thenReturn(Optional.empty());
+
+        try {
+            accountService.delete(2L);
+            fail("Expected a 404 error");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+        verify(transactionRepository, never()).existsByAccountId(2L);
+        verify(accountRepository, never()).deleteById(2L);
+    }
+
+    //3
+    @Test
+    void deleteGives409WhenAccountHasTransactions() {
+        Account account = new Account(1L, "Main", BigDecimal.TEN, NOW);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(transactionRepository.existsByAccountId(1L)).thenReturn(true);
+
+        try {
+            accountService.delete(1L);
+            fail("Expected a 409 error");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        }
+        verify(accountRepository, never()).deleteById(1L);
+    }
+
+
 }

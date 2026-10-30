@@ -67,6 +67,7 @@ public class AccountService {
         log.info("Created account id={} name={} balance={}", saved.getId(), saved.getName(), saved.getBalance());
         return saved;
     }
+
     public Account update(Long id, UpdateAccountRequest request) {
         requireName(request.name());
         Account account = findById(id);
@@ -75,7 +76,6 @@ public class AccountService {
         log.info("Renamed account id={} to name={}", id, saved.getName());
         return saved;
     }
-
 
     public void delete(Long id) {
         findById(id);
@@ -88,7 +88,6 @@ public class AccountService {
     }
 
     private static void requireName(String name) {
-
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account name must not be blank");
         }

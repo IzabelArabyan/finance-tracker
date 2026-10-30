@@ -30,7 +30,7 @@ Accounts, categories and transactions each get a controller, a service and an in
 
 ## In the project
 
-- [ ] Add `Category` (id, name, type) and `Transaction` (id, accountId, categoryId, amount, type, date, description), enum `TransactionType` (`INCOME`, `EXPENSE`). Money as `BigDecimal`, dates as `LocalDate`.
+- [ ] Add `Category` (id, name, type) and `TransactionServiceTest` (id, accountId, categoryId, amount, type, date, description), enum `TransactionType` (`INCOME`, `EXPENSE`). Money as `BigDecimal`, dates as `LocalDate`.
 - [ ] Request and response DTOs as records, separate from the model classes, for example `CreateAccountRequest`, `AccountResponse`.
 - [ ] Full CRUD for accounts, categories and transactions under `/api/accounts`, `/api/categories`, `/api/transactions`.
 - [ ] Keep the data in a `Map` per entity, inside an `InMemoryXxxRepository` class in the `repository` sub-package. The service calls the repository, so step 4 can replace it with Spring Data without touching the service.
@@ -51,7 +51,7 @@ Accounts, categories and transactions each get a controller, a service and an in
 
 ### In the repository
 
-- Models `Category`, `Category`, `Transaction`, enum `TransactionType`, money as `BigDecimal`
+- Models `Category`, `Category`, `TransactionServiceTest`, enum `TransactionType`, money as `BigDecimal`
 - Request and response DTOs as records, separate from the model classes
 - `AccountController`, `CategoryController`, `TransactionController`
 - Services that depend on `InMemoryXxxRepository` classes (a `Map` per entity)

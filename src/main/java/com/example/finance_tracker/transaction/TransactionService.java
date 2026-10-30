@@ -27,7 +27,7 @@ public class TransactionService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Transaction> findAll(){
+    public List<Transaction> findAll() {
         return transactionRepository.findAll();
     }
 
@@ -54,6 +54,7 @@ public class TransactionService {
         addToBalance(saved);
         return saved;
     }
+
     public Transaction update(Long id, TransactionRequest request) {
         Transaction transaction = findById(id);
         checkAccountAndCategoryExist(request);
@@ -73,7 +74,8 @@ public class TransactionService {
         addToBalance(saved);              // apply the new version
         return saved;
     }
-    public  void delete(Long id) {
+
+    public void delete(Long id) {
         Transaction transaction = findById(id);
         removeFromBalance(transaction);
         transactionRepository.deleteById(id);
@@ -89,6 +91,7 @@ public class TransactionService {
         }
         accountRepository.save(account);
     }
+
     private void removeFromBalance(Transaction transaction) {
         Account account = getAccount(transaction.getAccountId());
         if (transaction.getType() == TransactionType.EXPENSE) {
