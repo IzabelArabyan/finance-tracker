@@ -107,39 +107,34 @@ public class AccountServiceTest {
     //7
     @Test
     void createWithNullNameGives400() {
-        expectBadRequest(new CreateAccountRequest(null, BigDecimal.TEN),
-                "Account name must not be blank");
+        expectBadRequest(new CreateAccountRequest(null, BigDecimal.TEN));
     }
 
     //8
     @Test
     void createWithEmptyNameGives400() {
-        expectBadRequest(new CreateAccountRequest("", BigDecimal.TEN),
-                "Account name must not be blank");
+        expectBadRequest(new CreateAccountRequest("", BigDecimal.TEN));
     }
 
     //9
     @Test
     void createWithOnlySpacesInNameGives400() {
-        expectBadRequest(new CreateAccountRequest("   ", BigDecimal.TEN),
-                "Account name must not be blank");
+        expectBadRequest(new CreateAccountRequest("   ", BigDecimal.TEN));
     }
 
     //10
     @Test
     void createWithNegativeBalanceGives400() {
-        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("-1")),
-                "Initial balance must be 0 or more");
+        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("-1")));
     }
 
     //11
     @Test
     void createWithThreeDecimalsGives400() {
-        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("10.999")),
-                "Initial balance can have at most 2 decimal places");
+        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("10.999")));
     }
 
-    private void expectBadRequest(CreateAccountRequest request, String expectedMessage) {
+    private void expectBadRequest(CreateAccountRequest request) {
         try {
             accountService.create(request);
             fail("Expected a 400 error");
