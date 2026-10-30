@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Repository
 public class InMemoryTransactionRepository {
 
-    private final Map<Long, Transaction> table =  new LinkedHashMap<>();
+    private final Map<Long, Transaction> table =  new ConcurrentSkipListMap<>();
     private final AtomicLong idSequence = new AtomicLong();
 
     public Transaction save(Transaction transaction) {

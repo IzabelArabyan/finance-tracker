@@ -24,9 +24,10 @@ public class CategoryService {
         this.transactionRepository = transactionRepository;
     }
 
-    public List<Category> findAll(){
+    public List<Category> findAll() {
         return categoryRepository.findAll();
     }
+
     public Category findById(Long id) {
         Optional<Category> category = categoryRepository.findById(id);
         if (category.isEmpty()) {
@@ -34,6 +35,7 @@ public class CategoryService {
         }
         return category.get();
     }
+
     public Category create(CategoryRequest request) {
         requireName(request.name());
         Category saved = categoryRepository.save(new Category(null, request.name().trim()));

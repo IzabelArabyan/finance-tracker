@@ -4,6 +4,7 @@ import com.example.finance_tracker.account.dto.CreateAccountRequest;
 import com.example.finance_tracker.account.dto.UpdateAccountRequest;
 import com.example.finance_tracker.account.repository.InMemoryAccountRepository;
 import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -31,8 +32,8 @@ public class AccountService {
                 this.accountRepository = accountRepository;
                 this.transactionRepository = transactionRepository;
                 this.clock = clock;
-
     }
+
     public List<Account> findAll() {
         return (accountRepository.findAll());
     }
@@ -46,6 +47,7 @@ public class AccountService {
     }
 
     public Account create(CreateAccountRequest request) {
+
         requireName(request.name());
 
         BigDecimal balance = request.initialBalance();
@@ -65,6 +67,7 @@ public class AccountService {
         log.info("Created account id={} name={} balance={}", saved.getId(), saved.getName(), saved.getBalance());
         return saved;
     }
+
     public Account update(Long id, UpdateAccountRequest request) {
         requireName(request.name());
         Account account = findById(id);
@@ -73,7 +76,6 @@ public class AccountService {
         log.info("Renamed account id={} to name={}", id, saved.getName());
         return saved;
     }
-
 
     public void delete(Long id) {
         findById(id);

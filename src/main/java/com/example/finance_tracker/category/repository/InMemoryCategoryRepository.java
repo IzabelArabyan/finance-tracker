@@ -4,13 +4,14 @@ import com.example.finance_tracker.category.Category;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 
 @Repository
 public class InMemoryCategoryRepository {
 
-    private final Map<Long, Category> table = new LinkedHashMap<>();
+    private final Map<Long, Category> table = new ConcurrentSkipListMap<>();
     private final AtomicLong idSequence = new AtomicLong();
 
     public Category save(Category category) {

@@ -8,18 +8,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 @Repository
 public class InMemoryAccountRepository {
 
-    private final Map<Long, Account> table = new LinkedHashMap<>();
-    private long lastId = 0;
+    private final Map<Long, Account> table = new ConcurrentSkipListMap<>();
+    private final AtomicLong idSequence = new AtomicLong();
 
-    public  Account save(Account account) {
+    public Account save(Account account) {
         if (account.getId() == null) {
-            lastId++;
-            account.setId(lastId);
+            account.setId(idSequence.incrementAndGet());
         }
         table.put(account.getId(), copy(account));
         return copy(account);
