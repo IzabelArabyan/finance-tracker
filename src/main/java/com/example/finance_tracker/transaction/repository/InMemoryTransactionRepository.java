@@ -50,7 +50,7 @@ public class InMemoryTransactionRepository {
 
     public boolean existsByAccountId(Long accountId) {
         for (Transaction row : table.values()) {
-            if (row.getAccountId().equals(accountId)) {
+            if (accountId.equals(row.getAccountId())) {
                 return true;
             }
         }
@@ -60,7 +60,7 @@ public class InMemoryTransactionRepository {
 
     public boolean existsByCategoryId(Long categoryId) {
         for (Transaction row : table.values()) {
-            if (row.getCategoryId().equals(categoryId)) {
+            if (categoryId.equals(row.getCategoryId())) {
                 return true;
             }
         }

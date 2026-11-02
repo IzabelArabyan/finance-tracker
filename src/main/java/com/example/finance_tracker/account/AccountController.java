@@ -1,11 +1,11 @@
 package com.example.finance_tracker.account;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.example.finance_tracker.account.dto.AccountResponse;
 import com.example.finance_tracker.account.dto.CreateAccountRequest;
 import com.example.finance_tracker.account.dto.UpdateAccountRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,12 +35,12 @@ public class AccountController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse create(@RequestBody CreateAccountRequest request){
+    public AccountResponse create(@Valid @RequestBody CreateAccountRequest request){
         return AccountResponse.from(accountService.create(request));
     }
 
     @PutMapping("/{id}")
-    public AccountResponse update(@PathVariable Long id, @RequestBody UpdateAccountRequest request) {
+    public AccountResponse update(@PathVariable Long id, @Valid @RequestBody UpdateAccountRequest request) {
         return AccountResponse.from(accountService.update(id, request));
     }
     //api/accounts/5

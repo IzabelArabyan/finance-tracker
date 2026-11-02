@@ -2,14 +2,15 @@ package com.example.finance_tracker.category;
 
 import com.example.finance_tracker.category.dto.CategoryRequest;
 import com.example.finance_tracker.category.repository.InMemoryCategoryRepository;
+import com.example.finance_tracker.common.exception.NotFoundException;
+import com.example.finance_tracker.common.exception.ValidationException;
 import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+
 
 
 import java.util.Optional;
@@ -71,33 +72,7 @@ class CategoryServiceTest {
         assertEquals("Salary", result.getName());
     }
 
-    //4
-    @Test
-    void createWithNullNameGives400() {
-        expectCreateBadRequest(new CategoryRequest(null));
-    }
 
-    //5
-    @Test
-    void createWithEmptyNameGives400() {
-        expectCreateBadRequest(new CategoryRequest(""));
-    }
-
-    //6
-    @Test
-    void createWithOnlySpacesInNameGives400() {
-        expectCreateBadRequest(new CategoryRequest("   "));
-    }
-
-    private void expectCreateBadRequest(CategoryRequest request) {
-        try {
-            categoryService.create(request);
-            fail("Expected a 400 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-        }
-        verify(categoryRepository, never()).save(any(Category.class));
-    }
 
     //update
     //1
@@ -128,46 +103,18 @@ class CategoryServiceTest {
 
     //3
     @Test
-    void updateWithNullNameGives400() {
-        expectUpdateBadRequest(new CategoryRequest(null));
-    }
-
-    //4
-    @Test
-    void updateWithEmptyNameGives400() {
-        expectUpdateBadRequest(new CategoryRequest(""));
-    }
-
-    //5
-    @Test
-    void updateWithOnlySpacesInNameGives400() {
-        expectUpdateBadRequest(new CategoryRequest("   "));
-    }
-
-    //6
-    @Test
     void updateGives404WhenCategoryIsMissing() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         try {
             categoryService.update(99L, new CategoryRequest("Groceries"));
             fail("Expected a 404 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        } catch (NotFoundException e) {
+            assertEquals("Category 99 not found", e.getMessage());
         }
         verify(categoryRepository, never()).save(any(Category.class));
     }
 
-
-    private void expectUpdateBadRequest(CategoryRequest request) {
-        try {
-            categoryService.update(1L, request);
-            fail("Expected a 400 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-        }
-        verify(categoryRepository, never()).save(any(Category.class));
-    }
 
     //delete
     //1
@@ -189,8 +136,8 @@ class CategoryServiceTest {
         try {
             categoryService.delete(99L);
             fail("Expected a 404 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        } catch (NotFoundException e) {
+            assertEquals("Category 99 not found", e.getMessage());
         }
         verify(transactionRepository, never()).existsByCategoryId(99L);
         verify(categoryRepository, never()).deleteById(99L);
@@ -205,8 +152,8 @@ class CategoryServiceTest {
         try {
             categoryService.delete(1L);
             fail("Expected a 409 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        }  catch (ValidationException e) {
+            assertEquals("Category 1 is used by transactions, delete them first", e.getMessage());
         }
         verify(categoryRepository, never()).deleteById(1L);
     }

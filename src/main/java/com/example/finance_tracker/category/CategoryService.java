@@ -2,6 +2,8 @@ package com.example.finance_tracker.category;
 
 import com.example.finance_tracker.category.dto.CategoryRequest;
 import com.example.finance_tracker.category.repository.InMemoryCategoryRepository;
+import com.example.finance_tracker.common.exception.NotFoundException;
+import com.example.finance_tracker.common.exception.ValidationException;
 import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,20 +33,18 @@ public class CategoryService {
     public Category findById(Long id) {
         Optional<Category> category = categoryRepository.findById(id);
         if (category.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category " + id + " not found");
+            throw new NotFoundException("Category", id);
         }
         return category.get();
     }
 
     public Category create(CategoryRequest request) {
-        requireName(request.name());
         Category saved = categoryRepository.save(new Category(null, request.name().trim()));
         log.info("Created category id={} name={}", saved.getId(), saved.getName());
         return saved;
     }
 
     public Category update(Long id, CategoryRequest request) {
-        requireName(request.name());
         Category category = findById(id);
         category.setName(request.name().trim());
         Category saved = categoryRepository.save(category);
@@ -55,16 +55,10 @@ public class CategoryService {
     public void delete(Long id) {
         findById(id);
         if (transactionRepository.existsByCategoryId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Category " + id + " is used by transactions, delete them first");
+            throw new ValidationException("Category " + id + " is used by transactions, delete them first");
         }
         categoryRepository.deleteById(id);
         log.info("Deleted category id={}", id);
     }
 
-    private static void requireName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category name must not be blank");
-        }
-    }
 }

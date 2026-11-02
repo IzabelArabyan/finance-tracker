@@ -3,6 +3,8 @@ package com.example.finance_tracker.account;
 import com.example.finance_tracker.account.dto.CreateAccountRequest;
 import com.example.finance_tracker.account.dto.UpdateAccountRequest;
 import com.example.finance_tracker.account.repository.InMemoryAccountRepository;
+import com.example.finance_tracker.common.exception.NotFoundException;
+import com.example.finance_tracker.common.exception.ValidationException;
 import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,45 +106,6 @@ public class AccountServiceTest {
     }
 
 
-    //7
-    @Test
-    void createWithNullNameGives400() {
-        expectBadRequest(new CreateAccountRequest(null, BigDecimal.TEN));
-    }
-
-    //8
-    @Test
-    void createWithEmptyNameGives400() {
-        expectBadRequest(new CreateAccountRequest("", BigDecimal.TEN));
-    }
-
-    //9
-    @Test
-    void createWithOnlySpacesInNameGives400() {
-        expectBadRequest(new CreateAccountRequest("   ", BigDecimal.TEN));
-    }
-
-    //10
-    @Test
-    void createWithNegativeBalanceGives400() {
-        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("-1")));
-    }
-
-    //11
-    @Test
-    void createWithThreeDecimalsGives400() {
-        expectBadRequest(new CreateAccountRequest("Main", new BigDecimal("10.999")));
-    }
-
-    private void expectBadRequest(CreateAccountRequest request) {
-        try {
-            accountService.create(request);
-            fail("Expected a 400 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-        }
-        verify(accountRepository, never()).save(any(Account.class));
-    }
 
     //Update
     //1
@@ -184,25 +147,8 @@ public class AccountServiceTest {
         assertEquals(NOW, result.getCreatedAt());
     }
 
+
     //4
-    @Test
-    void updateWithNullNameGives400() {
-        expectUpdateBadRequest(new UpdateAccountRequest(null));
-    }
-
-    //5
-    @Test
-    void updateWithEmptyNameGives400() {
-        expectUpdateBadRequest(new UpdateAccountRequest(""));
-    }
-
-    //6
-    @Test
-    void updateWithOnlySpacesInNameGives400() {
-        expectUpdateBadRequest(new UpdateAccountRequest("   "));
-    }
-
-    //7
     @Test
     void updateGives404WhenAccountIsMissing() {
         when(accountRepository.findById(99L)).thenReturn(Optional.empty());
@@ -210,8 +156,8 @@ public class AccountServiceTest {
         try {
             accountService.update(99L, new UpdateAccountRequest("New"));
             fail("Expected a 404 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        } catch (NotFoundException e) {
+            assertEquals("Account 99 not found", e.getMessage());
         }
         verify(accountRepository, never()).save(any(Account.class));
     }
@@ -247,8 +193,8 @@ public class AccountServiceTest {
         try {
             accountService.delete(2L);
             fail("Expected a 404 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }catch (NotFoundException e) {
+            assertEquals("Account 2 not found", e.getMessage());
         }
         verify(transactionRepository, never()).existsByAccountId(2L);
         verify(accountRepository, never()).deleteById(2L);
@@ -264,8 +210,9 @@ public class AccountServiceTest {
         try {
             accountService.delete(1L);
             fail("Expected a 409 error");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        }catch (ValidationException e) {
+            assertEquals("Account 1 still has transactions, delete them first", e.getMessage());
+
         }
         verify(accountRepository, never()).deleteById(1L);
     }
