@@ -1,27 +1,48 @@
 package com.example.finance_tracker.transaction;
 
+import com.example.finance_tracker.account.Account;
+import com.example.finance_tracker.category.Category;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-
+@Entity
+@Table(name = "transactions")
 public class Transaction {
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long accountId;
-    private Long categoryId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
     private TransactionType type;
+
+    @Column(nullable = false)
     private LocalDate date;
+
+    @Column(length = 255)
     private String description;
 
-    public Transaction() {
+    protected Transaction() {
     }
 
-    public Transaction(Long id, Long accountId, Long categoryId, BigDecimal amount,
+    public Transaction(Long id, Account account, Category category, BigDecimal amount,
                        TransactionType type, LocalDate date, String description) {
         this.id = id;
-        this.accountId = accountId;
-        this.categoryId = categoryId;
+        this.account = account;
+        this.category = category;
         this.amount = amount;
         this.type = type;
         this.date = date;
@@ -36,20 +57,20 @@ public class Transaction {
         this.id = id;
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public Account getAccount() {
+        return account;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
+    public Category getCategory() {
+        return category;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     public BigDecimal getAmount() {

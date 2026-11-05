@@ -14,10 +14,17 @@ public record TransactionResponse(Long id,
                                   LocalDate date,
                                   String description) {
     public static TransactionResponse from(Transaction transaction){
+
+        // An INCOME may have no category
+        Long categoryId = null;
+        if (transaction.getCategory() != null) {
+            categoryId = transaction.getCategory().getId();
+        }
+
         return new TransactionResponse(
                 transaction.getId(),
-                transaction.getAccountId(),
-                transaction.getCategoryId(),
+                transaction.getAccount().getId(),
+                transaction.getCategory().getId(),
                 transaction.getAmount(),
                 transaction.getType(),
                 transaction.getDate(),

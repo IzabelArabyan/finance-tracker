@@ -1,13 +1,15 @@
 package com.example.finance_tracker.transaction;
 
 import com.example.finance_tracker.account.Account;
-import com.example.finance_tracker.account.repository.InMemoryAccountRepository;
-import com.example.finance_tracker.category.repository.InMemoryCategoryRepository;
+import com.example.finance_tracker.account.repository.AccountRepository;
+import com.example.finance_tracker.category.Category;
+import com.example.finance_tracker.category.repository.CategoryRepository;
 import com.example.finance_tracker.common.exception.InsufficientFundsException;
 import com.example.finance_tracker.common.exception.NotFoundException;
 import com.example.finance_tracker.common.exception.ValidationException;
 import com.example.finance_tracker.transaction.dto.TransactionRequest;
-import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
+import com.example.finance_tracker.transaction.repository.TransactionRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -19,14 +21,14 @@ import java.util.Optional;
 @Service
 public class TransactionService {
 
-    private final InMemoryTransactionRepository transactionRepository;
-    private final InMemoryAccountRepository accountRepository;
-    private final InMemoryCategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
     private final Clock clock;
 
-    public TransactionService(InMemoryTransactionRepository transactionRepository,
-                              InMemoryAccountRepository accountRepository,
-                              InMemoryCategoryRepository categoryRepository,
+    public TransactionService(TransactionRepository transactionRepository,
+                              AccountRepository accountRepository,
+                              CategoryRepository categoryRepository,
                               Clock clock) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
@@ -45,43 +47,43 @@ public class TransactionService {
         }
         return transaction.get();
     }
-
+    @Transactional
     public Transaction create(TransactionRequest request) {
         Account account = getAccount(request.accountId());
-        checkCategory(request);
+        Category category = getCategory(request);
 
         LocalDate date = request.date();
         if (date == null) {
             date = LocalDate.now(clock);
         }
 
-        Transaction transaction = new Transaction(null, request.accountId(), request.categoryId(),
+        Transaction transaction = new Transaction(null, account, category,
                 request.amount(), request.type(), date, request.description());
 
 
         addToBalance(account, transaction);
         requireEnoughMoney(account);
 
-        Transaction saved = transactionRepository.save(transaction);
         accountRepository.save(account);
-        return saved;
+        return transactionRepository.save(transaction);
+
     }
 
-
+    @Transactional
     public Transaction update(Long id, TransactionRequest request) {
         Transaction transaction = findById(id);
 
 
-        if (!request.accountId().equals(transaction.getAccountId())) {
+        if (!request.accountId().equals(transaction.getAccount().getId())) {
             throw new ValidationException("A transaction cannot be moved to another account");
         }
 
-        Account account = getAccount(transaction.getAccountId());
-        checkCategory(request);
+        Account account = transaction.getAccount();
+        Category category = getCategory(request);
 
         removeFromBalance(account, transaction);
 
-        transaction.setCategoryId(request.categoryId());
+        transaction.setCategory(category);
         transaction.setAmount(request.amount());
         transaction.setType(request.type());
         if (request.date() != null) {
@@ -98,7 +100,7 @@ public class TransactionService {
 
     public void delete(Long id) {
         Transaction transaction = findById(id);
-        Account account = getAccount(transaction.getAccountId());
+        Account account = transaction.getAccount();
 
         removeFromBalance(account, transaction);
         requireEnoughMoney(account);
@@ -131,7 +133,7 @@ public class TransactionService {
             throw new InsufficientFundsException(account.getId());
         }
     }
-
+    //404
     private Account getAccount(Long id) {
         Optional<Account> account = accountRepository.findById(id);
         if (account.isEmpty()) {
@@ -140,16 +142,17 @@ public class TransactionService {
         return account.get();
     }
 
-    //category required for expense not for income
-    private void checkCategory(TransactionRequest request) {
+    private Category getCategory(TransactionRequest request) {
         if (request.categoryId() == null) {
             if (request.type() == TransactionType.EXPENSE) {
                 throw new ValidationException("categoryId is required for an expense");
             }
-            return;
+            return null;
         }
-        if (!categoryRepository.existsById(request.categoryId())) {
+        Optional<Category> category = categoryRepository.findById(request.categoryId());
+        if (category.isEmpty()) {
             throw new NotFoundException("Category", request.categoryId());
         }
+        return category.get();
     }
 }

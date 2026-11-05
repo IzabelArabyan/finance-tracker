@@ -1,16 +1,28 @@
 package com.example.finance_tracker.account;
 
 
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public final class Account {
+@Entity
+@Table(name = "accounts")
+public class Account {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 100)
     private String name;
+
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
+
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public Account() {
+    protected Account() {
     }
 
     public Account(Long id, String name, BigDecimal balance, Instant createdAt) {

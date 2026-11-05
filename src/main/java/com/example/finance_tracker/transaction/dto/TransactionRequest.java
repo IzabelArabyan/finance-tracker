@@ -23,7 +23,7 @@ public record TransactionRequest(@NotNull(message = "accountId is required")
                                  @NotNull(message = "type must be INCOME or EXPENSE")
                                  TransactionType type,
 
-                                 //if missing today is used
+                                 //if missing, today is used
                                  @PastOrPresent(message = "date must not be in the future")
                                  LocalDate date,
 

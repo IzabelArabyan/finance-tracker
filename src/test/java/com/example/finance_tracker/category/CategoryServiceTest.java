@@ -1,10 +1,10 @@
 package com.example.finance_tracker.category;
 
 import com.example.finance_tracker.category.dto.CategoryRequest;
-import com.example.finance_tracker.category.repository.InMemoryCategoryRepository;
+import com.example.finance_tracker.category.repository.CategoryRepository;
 import com.example.finance_tracker.common.exception.NotFoundException;
 import com.example.finance_tracker.common.exception.ValidationException;
-import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
+import com.example.finance_tracker.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +28,10 @@ import static org.mockito.Mockito.when;
 class CategoryServiceTest {
 
     @Mock
-    private InMemoryCategoryRepository categoryRepository;
+    private CategoryRepository categoryRepository;
 
     @Mock
-    private InMemoryTransactionRepository transactionRepository;
+    private TransactionRepository transactionRepository;
 
     private CategoryService categoryService;
 

@@ -2,8 +2,8 @@ package com.example.finance_tracker.account;
 
 import com.example.finance_tracker.account.dto.CreateAccountRequest;
 import com.example.finance_tracker.account.dto.UpdateAccountRequest;
-import com.example.finance_tracker.account.repository.InMemoryAccountRepository;
-import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
+import com.example.finance_tracker.account.repository.AccountRepository;
+import com.example.finance_tracker.transaction.repository.TransactionRepository;
 import com.example.finance_tracker.common.exception.NotFoundException;
 import com.example.finance_tracker.common.exception.ValidationException;
 import org.slf4j.Logger;
@@ -23,11 +23,11 @@ import java.time.Instant;
 public class AccountService {
     private static final Logger log = LoggerFactory.getLogger(AccountService.class);
 
-    private final InMemoryAccountRepository accountRepository;
-    private final InMemoryTransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
     private final Clock clock;
 
-    public AccountService(InMemoryAccountRepository accountRepository, InMemoryTransactionRepository transactionRepository, Clock clock) {
+    public AccountService(AccountRepository accountRepository, TransactionRepository transactionRepository, Clock clock) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.clock = clock;

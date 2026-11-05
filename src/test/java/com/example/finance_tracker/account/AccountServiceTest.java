@@ -2,10 +2,10 @@ package com.example.finance_tracker.account;
 
 import com.example.finance_tracker.account.dto.CreateAccountRequest;
 import com.example.finance_tracker.account.dto.UpdateAccountRequest;
-import com.example.finance_tracker.account.repository.InMemoryAccountRepository;
+import com.example.finance_tracker.account.repository.AccountRepository;
 import com.example.finance_tracker.common.exception.NotFoundException;
 import com.example.finance_tracker.common.exception.ValidationException;
-import com.example.finance_tracker.transaction.repository.InMemoryTransactionRepository;
+import com.example.finance_tracker.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,10 +29,10 @@ import java.util.Optional;
 public class AccountServiceTest {
     private static final Instant NOW = Instant.parse("2026-01-15T10:00:00Z");
     @Mock
-    private InMemoryAccountRepository accountRepository;
+    private AccountRepository accountRepository;
 
     @Mock
-    private InMemoryTransactionRepository transactionRepository;
+    private TransactionRepository transactionRepository;
 
     private AccountService accountService;
 
