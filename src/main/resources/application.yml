@@ -33,14 +33,3 @@ spring:
     # print the SQL that Hibernate runs, useful while learning
     show-sql: true
 
----
-# ---------- test: a throwaway database started by Testcontainers ----------
-spring:
-  config:
-    activate:
-      on-profile: test
-
-  datasource:
-    # "tc:" means: Testcontainers starts a postgres:17 container and connects to it
-    url: jdbc:tc:postgresql:17:///finance
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
