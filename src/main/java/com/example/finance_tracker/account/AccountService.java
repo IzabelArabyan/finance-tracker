@@ -38,12 +38,10 @@ public class AccountService {
     }
 
     public Account findById(Long id) {
-        Optional<Account> account = accountRepository.findById(id);
-        if (account.isEmpty()) {
-            throw new NotFoundException("Account", id);
-        }
-        return account.get();
+        return accountRepository.findById(id).
+                orElseThrow(() -> new NotFoundException("Account", id));
     }
+
 
     public Account create(CreateAccountRequest request) {
 

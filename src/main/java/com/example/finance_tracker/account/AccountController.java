@@ -20,12 +20,9 @@ public class AccountController {
 
     @GetMapping
     public List<AccountResponse> findAll() {
-        List<Account> accounts = accountService.findAll();
-        List<AccountResponse> result = new ArrayList<>();
-        for (int i = 0; i < accounts.size(); i++) {
-            result.add(AccountResponse.from(accounts.get(i)));
-        }
-        return result;
+        return accountService.findAll().stream()
+                .map(AccountResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")

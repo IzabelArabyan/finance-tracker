@@ -41,11 +41,8 @@ public class TransactionService {
     }
 
     public Transaction findById(Long id) {
-        Optional<Transaction> transaction = transactionRepository.findById(id);
-        if (transaction.isEmpty()) {
-            throw new NotFoundException("Transaction", id);
-        }
-        return transaction.get();
+        return transactionRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Transaction", id));
     }
     @Transactional
     public Transaction create(TransactionRequest request) {
@@ -135,11 +132,8 @@ public class TransactionService {
     }
     //404
     private Account getAccount(Long id) {
-        Optional<Account> account = accountRepository.findById(id);
-        if (account.isEmpty()) {
-            throw new NotFoundException("Account", id);
-        }
-        return account.get();
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Account", id));
     }
 
     private Category getCategory(TransactionRequest request) {
@@ -149,10 +143,7 @@ public class TransactionService {
             }
             return null;
         }
-        Optional<Category> category = categoryRepository.findById(request.categoryId());
-        if (category.isEmpty()) {
-            throw new NotFoundException("Category", request.categoryId());
-        }
-        return category.get();
+        return categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new NotFoundException("Category", request.categoryId()));
     }
 }

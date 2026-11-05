@@ -29,11 +29,8 @@ public class CategoryService {
     }
 
     public Category findById(Long id) {
-        Optional<Category> category = categoryRepository.findById(id);
-        if (category.isEmpty()) {
-            throw new NotFoundException("Category", id);
-        }
-        return category.get();
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category", id));
     }
 
     public Category create(CategoryRequest request) {

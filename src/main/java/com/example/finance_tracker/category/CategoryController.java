@@ -20,11 +20,9 @@ public class CategoryController {
 
     @GetMapping
     public List<CategoryResponse> findAll() {
-        List<CategoryResponse> res = new ArrayList<>();
-        for (Category category : categoryService.findAll()) {
-            res.add(CategoryResponse.from(category));
-        }
-        return res;
+        return categoryService.findAll().stream()
+                .map(CategoryResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")

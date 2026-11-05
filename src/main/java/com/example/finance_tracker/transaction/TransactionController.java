@@ -20,11 +20,9 @@ public class TransactionController {
 
     @GetMapping
     public List<TransactionResponse> findAll(){
-        List<TransactionResponse> res = new ArrayList<>();
-        for(Transaction transaction : transactionService.findAll()){
-            res.add(TransactionResponse.from(transaction));
-        }
-        return res;
+        return transactionService.findAll().stream()
+                .map(TransactionResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
