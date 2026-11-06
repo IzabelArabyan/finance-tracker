@@ -1,0 +1,35 @@
+# ---------- settings for every profile ----------
+spring:
+  application:
+    name: finance_tracker
+
+  # When no profile is chosen, use "dev"
+  profiles:
+    default: dev
+
+  jpa:
+    hibernate:
+      # Hibernate must NOT create tables. It only checks that the entities match the tables Flyway made.
+      ddl-auto: validate
+
+
+  # Flyway runs the files in src/main/resources/db/migration at startup
+  flyway:
+    locations: classpath:db/migration
+
+---
+# ---------- dev: your Mac, the Docker database ----------
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/finance
+    username: finance
+    password: finance
+
+  jpa:
+    # print the SQL that Hibernate runs, useful while learning
+    show-sql: true
+

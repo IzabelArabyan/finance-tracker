@@ -1,0 +1,160 @@
+package com.example.finance.tracker.category;
+
+import com.example.finance.tracker.category.dto.CategoryRequest;
+import com.example.finance.tracker.category.repository.CategoryRepository;
+import com.example.finance.tracker.common.exception.NotFoundException;
+import com.example.finance.tracker.common.exception.ValidationException;
+import com.example.finance.tracker.transaction.repository.TransactionRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class CategoryServiceTest {
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    private CategoryService categoryService;
+
+    @BeforeEach
+    void setUp() {
+        categoryService = new CategoryService(categoryRepository, transactionRepository);
+    }
+
+    //create
+    //1
+    @Test
+    void createSavesTheName() {
+        when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
+
+        Category result = categoryService.create(new CategoryRequest("Salary"));
+
+        assertEquals("Salary", result.getName());
+    }
+
+    //2
+    @Test
+    void createRemovesSpacesAroundTheName() {
+        when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
+
+        Category result = categoryService.create(new CategoryRequest("  Salary  "));
+
+        assertEquals("Salary", result.getName());
+    }
+
+    //3
+    @Test
+    void createReturnsTheCategoryWithIdFromRepository() {
+        when(categoryRepository.save(any(Category.class))).thenReturn(new Category(1L, "Salary"));
+
+        Category result = categoryService.create(new CategoryRequest("Salary"));
+
+        assertEquals(1L, result.getId());
+        assertEquals("Salary", result.getName());
+    }
+
+
+
+    //update
+    //1
+    @Test
+    void updateChangesTheName() {
+        Category category = new Category(1L, "Food");
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
+
+        Category result = categoryService.update(1L, new CategoryRequest("Groceries"));
+
+        assertEquals("Groceries", result.getName());
+        verify(categoryRepository).save(category);
+    }
+
+    //2
+    @Test
+    void updateKeepsTheSameId() {
+        Category category = new Category(1L, "Food");
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
+
+        Category result = categoryService.update(1L, new CategoryRequest("Groceries"));
+
+        assertEquals(1L, result.getId());
+    }
+
+
+    //3
+    @Test
+    void updateGives404WhenCategoryIsMissing() {
+        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+
+        try {
+            categoryService.update(99L, new CategoryRequest("Groceries"));
+            fail("Expected a 404 error");
+        } catch (NotFoundException e) {
+            assertEquals("Category 99 not found", e.getMessage());
+        }
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+
+    //delete
+    //1
+    @Test
+    void deleteRemovesTheCategory() {
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(new Category(1L, "Food")));
+        when(transactionRepository.existsByCategoryId(1L)).thenReturn(false);
+
+        categoryService.delete(1L);
+
+        verify(categoryRepository).deleteById(1L);
+    }
+
+    //2
+    @Test
+    void deleteGives404WhenNoCategory() {
+        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+
+        try {
+            categoryService.delete(99L);
+            fail("Expected a 404 error");
+        } catch (NotFoundException e) {
+            assertEquals("Category 99 not found", e.getMessage());
+        }
+        verify(transactionRepository, never()).existsByCategoryId(99L);
+        verify(categoryRepository, never()).deleteById(99L);
+    }
+
+    //3
+    @Test
+    void deleteGives409WhenCategoryIsUsed() {
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(new Category(1L, "Food")));
+        when(transactionRepository.existsByCategoryId(1L)).thenReturn(true);
+
+        try {
+            categoryService.delete(1L);
+            fail("Expected a 409 error");
+        }  catch (ValidationException e) {
+            assertEquals("Category 1 is used by transactions, delete them first", e.getMessage());
+        }
+        verify(categoryRepository, never()).deleteById(1L);
+    }
+}
