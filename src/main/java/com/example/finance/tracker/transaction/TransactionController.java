@@ -5,6 +5,13 @@ import com.example.finance.tracker.transaction.dto.TransactionResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.example.finance.tracker.common.PageResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -17,11 +24,17 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+
+    // GET /api/transactions?accountId=1&categoryId=2&from=2026-01-01&to=2026-01-31&page=0&size=20&sort=date,desc
     @GetMapping
-    public List<TransactionResponse> findAll(){
-        return transactionService.findAll().stream()
-                .map(TransactionResponse::from)
-                .toList();
+    public PageResponse<TransactionResponse> search(
+            @RequestParam(required = false) Long accountId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @PageableDefault(size = 20, sort = {"date", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+
+        return PageResponse.from(transactionService.search(accountId, categoryId, from, to, pageable));
     }
 
     @GetMapping("/{id}")

@@ -11,6 +11,9 @@ import com.example.finance.tracker.transaction.dto.TransactionRequest;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import com.example.finance.tracker.transaction.dto.TransactionResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Clock;
 
@@ -33,6 +36,16 @@ public class TransactionService {
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
         this.clock = clock;
+    }
+
+    @Transactional
+    public Page<TransactionResponse> search(Long accountId, Long categoryId,
+                                            LocalDate from, LocalDate to, Pageable pageable) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new ValidationException("'from' must be on or before 'to'");
+        }
+        return transactionRepository.search(accountId, categoryId, from, to, pageable)
+                .map(TransactionResponse::from);
     }
 
     public List<Transaction> findAll() {
@@ -68,6 +81,7 @@ public class TransactionService {
     @Transactional
     public Transaction update(Long id, TransactionRequest request) {
         Transaction transaction = findById(id);
+        requireNotTransfer(transaction);
 
 
         if (!request.accountId().equals(transaction.getAccount().getId())) {
@@ -96,6 +110,7 @@ public class TransactionService {
 
     public void delete(Long id) {
         Transaction transaction = findById(id);
+        requireNotTransfer(transaction);
         Account account = transaction.getAccount();
 
         removeFromBalance(account, transaction);
@@ -129,6 +144,14 @@ public class TransactionService {
             throw new InsufficientFundsException(account.getId());
         }
     }
+
+    private static void requireNotTransfer(Transaction transaction) {
+        if (transaction.getTransferId() != null) {
+            throw new ValidationException("Transaction " + transaction.getId()
+                    + " is part of a transfer and cannot be changed on its own");
+        }
+    }
+
     //404
     private Account getAccount(Long id) {
         return accountRepository.findById(id)

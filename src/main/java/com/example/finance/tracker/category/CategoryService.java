@@ -5,6 +5,7 @@ import com.example.finance.tracker.category.repository.CategoryRepository;
 import com.example.finance.tracker.common.exception.NotFoundException;
 import com.example.finance.tracker.common.exception.ValidationException;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
+import com.example.finance.tracker.budget.repository.BudgetRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,14 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
+    private final BudgetRepository budgetRepository;
 
-    public CategoryService(CategoryRepository categoryRepository, TransactionRepository transactionRepository) {
+    public CategoryService(CategoryRepository categoryRepository,
+                           TransactionRepository transactionRepository,
+                           BudgetRepository budgetRepository) {
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
+        this.budgetRepository = budgetRepository;
     }
 
     public List<Category> findAll() {
@@ -60,6 +65,9 @@ public class CategoryService {
         findById(id);
         if (transactionRepository.existsByCategoryId(id)) {
             throw new ValidationException("Category " + id + " is used by transactions, delete them first");
+        }
+        if (budgetRepository.existsByCategoryId(id)) {
+            throw new ValidationException("Category " + id + " has budgets, delete them first");
         }
         categoryRepository.deleteById(id);
         log.info("Deleted category id={}", id);

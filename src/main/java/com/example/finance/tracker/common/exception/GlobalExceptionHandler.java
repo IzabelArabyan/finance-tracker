@@ -2,6 +2,7 @@ package com.example.finance.tracker.common.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -65,6 +67,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleWrongIdType(MethodArgumentTypeMismatchException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
                 "Invalid value for '" + e.getName() + "'");
+    }
+    // 400 - sort by a field that doesn't exist, e.g. ?sort=color
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ProblemDetail handleWrongSortField(PropertyReferenceException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Cannot sort by '" + e.getPropertyName() + "'");
     }
     //404
     @ExceptionHandler(NoResourceFoundException.class)

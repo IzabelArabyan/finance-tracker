@@ -1,5 +1,6 @@
 package com.example.finance.tracker.category;
 
+import com.example.finance.tracker.budget.repository.BudgetRepository;
 import com.example.finance.tracker.category.dto.CategoryRequest;
 import com.example.finance.tracker.category.repository.CategoryRepository;
 import com.example.finance.tracker.common.exception.NotFoundException;
@@ -26,6 +27,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
+    @Mock
+    private BudgetRepository budgetRepository;
 
     @Mock
     private CategoryRepository categoryRepository;
@@ -37,7 +40,7 @@ class CategoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        categoryService = new CategoryService(categoryRepository, transactionRepository);
+        categoryService = new CategoryService(categoryRepository, transactionRepository, budgetRepository);
     }
 
     //create
