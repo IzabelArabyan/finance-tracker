@@ -2,6 +2,7 @@ package com.example.finance.tracker.account;
 
 
 import jakarta.persistence.*;
+import jakarta.persistence.Version;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -21,6 +22,9 @@ public class Account {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Version
+    private Long version;
 
     protected Account() {
     }
@@ -62,5 +66,9 @@ public class Account {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 }
