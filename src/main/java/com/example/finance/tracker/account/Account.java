@@ -1,6 +1,6 @@
 package com.example.finance.tracker.account;
 
-
+import com.example.finance.tracker.user.User;
 import jakarta.persistence.*;
 import jakarta.persistence.Version;
 
@@ -23,6 +23,10 @@ public class Account {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @Version
     private Long version;
 
@@ -30,10 +34,14 @@ public class Account {
     }
 
     public Account(Long id, String name, BigDecimal balance, Instant createdAt) {
+        this(id, name, balance, createdAt, null);
+    }
+    public Account(Long id, String name, BigDecimal balance, Instant createdAt,  User owner) {
         this.id = id;
         this.name = name;
         this.balance = balance;
         this.createdAt = createdAt;
+        this.owner = owner;
     }
 
     public Long getId() {
@@ -66,6 +74,10 @@ public class Account {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public User getOwner() {
+        return owner;
     }
 
     public Long getVersion() {

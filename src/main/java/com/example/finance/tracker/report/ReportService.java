@@ -1,6 +1,7 @@
 package com.example.finance.tracker.report;
 import com.example.finance.tracker.common.exception.ValidationException;
 import com.example.finance.tracker.report.dto.MonthlyTotal;
+import com.example.finance.tracker.security.CurrentUser;
 import com.example.finance.tracker.transaction.repository.CategorySpending;
 import com.example.finance.tracker.transaction.repository.MonthlySums;
 import com.example.finance.tracker.transaction.repository.TopExpense;
@@ -22,13 +23,16 @@ public class ReportService {
     private static final int MAX_LIMIT = 100;
 
     private final TransactionRepository transactionRepository;
+    private final CurrentUser currentUser;
 
-    public ReportService(TransactionRepository transactionRepository) {
+    public ReportService(TransactionRepository transactionRepository,
+                         CurrentUser currentUser) {
         this.transactionRepository = transactionRepository;
+        this.currentUser = currentUser;
     }
     //reports/spending-by-category
     public List<CategorySpending> spendingByCategory(YearMonth month) {
-        return transactionRepository.spendingByCategory(month.atDay(1), month.atEndOfMonth());
+        return transactionRepository.spendingByCategory(currentUser.id(), month.atDay(1), month.atEndOfMonth());
     }
     //reports/monthly-totals
     public List<MonthlyTotal> monthlyTotals(int year) {
@@ -37,7 +41,7 @@ public class ReportService {
 
 
         Map<Integer, MonthlySums> sumsByMonth = new HashMap<>();
-        for (MonthlySums row : transactionRepository.monthlyTotals(from, to)) {
+        for (MonthlySums row : transactionRepository.monthlyTotals(currentUser.id(), from, to)) {
             sumsByMonth.put(row.month(), row);
         }
 
@@ -66,6 +70,6 @@ public class ReportService {
         if (limit < 1 || limit > MAX_LIMIT) {
             throw new ValidationException("limit must be between 1 and " + MAX_LIMIT);
         }
-        return transactionRepository.topExpenses(from, to, PageRequest.of(0, limit));
+        return transactionRepository.topExpenses(currentUser.id(), from, to, PageRequest.of(0, limit));
     }
 }

@@ -5,6 +5,7 @@ import com.example.finance.tracker.account.repository.AccountRepository;
 import com.example.finance.tracker.common.exception.InsufficientFundsException;
 import com.example.finance.tracker.common.exception.NotFoundException;
 import com.example.finance.tracker.common.exception.ValidationException;
+import com.example.finance.tracker.security.CurrentUser;
 import com.example.finance.tracker.transaction.Transaction;
 import com.example.finance.tracker.transaction.TransactionType;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
@@ -23,13 +24,17 @@ public class TransferService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final CurrentUser currentUser;
+
     private final Clock clock;
 
     public TransferService(AccountRepository accountRepository,
                            TransactionRepository transactionRepository,
+                           CurrentUser currentUser,
                            Clock clock) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.currentUser = currentUser;
         this.clock = clock;
     }
 
@@ -76,7 +81,7 @@ public class TransferService {
     }
 
     private Account getAccount(Long id) {
-        return accountRepository.findById(id)
+        return accountRepository.findByIdAndOwnerId(id, currentUser.id())
                 .orElseThrow(() -> new NotFoundException("Account", id));
     }
 }

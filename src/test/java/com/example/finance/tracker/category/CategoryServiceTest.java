@@ -6,11 +6,14 @@ import com.example.finance.tracker.category.repository.CategoryRepository;
 import com.example.finance.tracker.common.exception.NotFoundException;
 import com.example.finance.tracker.common.exception.ValidationException;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
+import com.example.finance.tracker.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.example.finance.tracker.security.CurrentUser;
+import static org.mockito.Mockito.lenient;
 
 
 
@@ -37,10 +40,18 @@ class CategoryServiceTest {
     private TransactionRepository transactionRepository;
 
     private CategoryService categoryService;
+    private static final Long USER_ID = 1L;
+
+    @Mock
+    private CurrentUser currentUser;
+
+    @Mock
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        categoryService = new CategoryService(categoryRepository, transactionRepository, budgetRepository);
+        lenient().when(currentUser.id()).thenReturn(USER_ID);
+        categoryService = new CategoryService(categoryRepository, transactionRepository, budgetRepository, userRepository, currentUser);
     }
 
     //create
@@ -82,7 +93,7 @@ class CategoryServiceTest {
     @Test
     void updateChangesTheName() {
         Category category = new Category(1L, "Food");
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
 
         Category result = categoryService.update(1L, new CategoryRequest("Groceries"));
@@ -95,7 +106,7 @@ class CategoryServiceTest {
     @Test
     void updateKeepsTheSameId() {
         Category category = new Category(1L, "Food");
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).then(returnsFirstArg());
 
         Category result = categoryService.update(1L, new CategoryRequest("Groceries"));
@@ -107,7 +118,7 @@ class CategoryServiceTest {
     //3
     @Test
     void updateGives404WhenCategoryIsMissing() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             categoryService.update(99L, new CategoryRequest("Groceries"));
@@ -123,7 +134,7 @@ class CategoryServiceTest {
     //1
     @Test
     void deleteRemovesTheCategory() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(new Category(1L, "Food")));
+        when(categoryRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(new Category(1L, "Food")));
         when(transactionRepository.existsByCategoryId(1L)).thenReturn(false);
 
         categoryService.delete(1L);
@@ -134,7 +145,7 @@ class CategoryServiceTest {
     //2
     @Test
     void deleteGives404WhenNoCategory() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             categoryService.delete(99L);
@@ -149,7 +160,7 @@ class CategoryServiceTest {
     //3
     @Test
     void deleteGives409WhenCategoryIsUsed() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(new Category(1L, "Food")));
+        when(categoryRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(new Category(1L, "Food")));
         when(transactionRepository.existsByCategoryId(1L)).thenReturn(true);
 
         try {
