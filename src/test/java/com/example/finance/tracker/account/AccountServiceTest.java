@@ -6,6 +6,7 @@ import com.example.finance.tracker.account.repository.AccountRepository;
 import com.example.finance.tracker.common.exception.NotFoundException;
 import com.example.finance.tracker.common.exception.ValidationException;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
+import com.example.finance.tracker.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,8 @@ import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.junit.jupiter.api.Assertions.*;
+import com.example.finance.tracker.security.CurrentUser;
+import static org.mockito.Mockito.lenient;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -28,8 +31,16 @@ import java.util.Optional;
 @ExtendWith(MockitoExtension.class)
 public class AccountServiceTest {
     private static final Instant NOW = Instant.parse("2026-01-15T10:00:00Z");
+    private static final Long USER_ID = 1L;
+
+    @Mock
+    private CurrentUser currentUser;
+
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -38,8 +49,9 @@ public class AccountServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(currentUser.id()).thenReturn(USER_ID);
         Clock clock = Clock.fixed(Instant.parse("2026-01-15T10:00:00Z"), ZoneId.of("UTC"));
-        accountService = new AccountService(accountRepository, transactionRepository, clock);
+        accountService = new AccountService(accountRepository, transactionRepository, userRepository, currentUser, clock);
     }
 
     //create
@@ -112,7 +124,7 @@ public class AccountServiceTest {
     @Test
     void UpdateChangesTheName() {
         Account account = new Account(1L, "Old", new BigDecimal("500.00"), NOW);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).then(returnsFirstArg());
 
         Account result = accountService.update(1L, new UpdateAccountRequest("New"));
@@ -125,7 +137,7 @@ public class AccountServiceTest {
     @Test
     void updateRemovesSpacesAroundTheName() {
         Account account = new Account(1L, "Old", new BigDecimal("500.00"), NOW);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).then(returnsFirstArg());
 
         Account result = accountService.update(1L, new UpdateAccountRequest("  New  "));
@@ -137,7 +149,7 @@ public class AccountServiceTest {
     @Test
     void updateKeepsIdBalanceAndCreatedAt() {
         Account account = new Account(1L, "Old", new BigDecimal("500.00"), NOW);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).then(returnsFirstArg());
 
         Account result = accountService.update(1L, new UpdateAccountRequest("New"));
@@ -151,7 +163,7 @@ public class AccountServiceTest {
     //4
     @Test
     void updateGives404WhenAccountIsMissing() {
-        when(accountRepository.findById(99L)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             accountService.update(99L, new UpdateAccountRequest("New"));
@@ -177,7 +189,7 @@ public class AccountServiceTest {
     @Test
     void DeleteRemovesTheAccount() {
         Account account = new Account(1L, "Main", BigDecimal.TEN, NOW);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
         when(transactionRepository.existsByAccountId(1L)).thenReturn(false);
 
         accountService.delete(1L);
@@ -188,7 +200,7 @@ public class AccountServiceTest {
     //2
     @Test
     void DeleteGives404WhenNoAccount() {
-        when(accountRepository.findById(2L)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerId(2L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             accountService.delete(2L);
@@ -204,7 +216,7 @@ public class AccountServiceTest {
     @Test
     void deleteGives409WhenAccountHasTransactions() {
         Account account = new Account(1L, "Main", BigDecimal.TEN, NOW);
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
         when(transactionRepository.existsByAccountId(1L)).thenReturn(true);
 
         try {

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
@@ -34,6 +35,9 @@ public class Transaction {
 
     @Column(length = 255)
     private String description;
+
+    @Column(name = "transfer_id")
+    private UUID transferId;
 
     protected Transaction() {
     }
@@ -103,5 +107,13 @@ public class Transaction {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getTransferId() {
+        return transferId;
+    }
+
+    public void setTransferId(UUID transferId) {
+        this.transferId = transferId;
     }
 }

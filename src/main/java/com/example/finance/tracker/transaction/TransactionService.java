@@ -11,6 +11,10 @@ import com.example.finance.tracker.transaction.dto.TransactionRequest;
 import com.example.finance.tracker.transaction.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import com.example.finance.tracker.transaction.dto.TransactionResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.example.finance.tracker.security.CurrentUser;
 
 import java.time.Clock;
 
@@ -23,16 +27,29 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
+    private final CurrentUser currentUser;
     private final Clock clock;
 
     public TransactionService(TransactionRepository transactionRepository,
                               AccountRepository accountRepository,
                               CategoryRepository categoryRepository,
+                              CurrentUser currentUser,
                               Clock clock) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
+        this.currentUser = currentUser;
         this.clock = clock;
+    }
+
+    @Transactional
+    public Page<TransactionResponse> search(Long accountId, Long categoryId,
+                                            LocalDate from, LocalDate to, Pageable pageable) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new ValidationException("'from' must be on or before 'to'");
+        }
+        return transactionRepository.search(currentUser.id(), accountId, categoryId, from, to, pageable)
+                .map(transaction -> TransactionResponse.from(transaction));
     }
 
     public List<Transaction> findAll() {
@@ -40,9 +57,10 @@ public class TransactionService {
     }
 
     public Transaction findById(Long id) {
-        return transactionRepository.findById(id)
+        return transactionRepository.findByIdAndAccountOwnerId(id, currentUser.id())
                 .orElseThrow(() -> new NotFoundException("Transaction", id));
     }
+
     @Transactional
     public Transaction create(TransactionRequest request) {
         Account account = getAccount(request.accountId());
@@ -68,6 +86,7 @@ public class TransactionService {
     @Transactional
     public Transaction update(Long id, TransactionRequest request) {
         Transaction transaction = findById(id);
+        requireNotTransfer(transaction);
 
 
         if (!request.accountId().equals(transaction.getAccount().getId())) {
@@ -96,6 +115,7 @@ public class TransactionService {
 
     public void delete(Long id) {
         Transaction transaction = findById(id);
+        requireNotTransfer(transaction);
         Account account = transaction.getAccount();
 
         removeFromBalance(account, transaction);
@@ -129,9 +149,17 @@ public class TransactionService {
             throw new InsufficientFundsException(account.getId());
         }
     }
+
+    private static void requireNotTransfer(Transaction transaction) {
+        if (transaction.getTransferId() != null) {
+            throw new ValidationException("Transaction " + transaction.getId()
+                    + " is part of a transfer and cannot be changed on its own");
+        }
+    }
+
     //404
     private Account getAccount(Long id) {
-        return accountRepository.findById(id)
+        return accountRepository.findByIdAndOwnerId(id, currentUser.id())
                 .orElseThrow(() -> new NotFoundException("Account", id));
     }
 
@@ -142,7 +170,7 @@ public class TransactionService {
             }
             return null;
         }
-        return categoryRepository.findById(request.categoryId())
+        return categoryRepository.findVisibleById(request.categoryId(), currentUser.id())
                 .orElseThrow(() -> new NotFoundException("Category", request.categoryId()));
     }
 }
