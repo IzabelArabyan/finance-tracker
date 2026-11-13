@@ -16,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 
+import javax.naming.AuthenticationException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,6 +93,11 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleWrongContentType(HttpMediaTypeNotSupportedException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                 "Content-Type must be application/json");
+    }
+    // 401
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleBadLogin(AuthenticationException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid username or password");
     }
 
     //500

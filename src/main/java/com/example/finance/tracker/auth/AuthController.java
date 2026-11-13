@@ -1,5 +1,7 @@
 package com.example.finance.tracker.auth;
 
+import com.example.finance.tracker.auth.dto.LoginRequest;
+import com.example.finance.tracker.auth.dto.LoginResponse;
 import com.example.finance.tracker.auth.dto.RegisterRequest;
 import com.example.finance.tracker.auth.dto.UserResponse;
 import jakarta.validation.Valid;
@@ -25,5 +27,10 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }
