@@ -1,5 +1,6 @@
 package com.example.finance.tracker.category;
 
+import com.example.finance.tracker.user.User;
 import jakarta.persistence.*;
 
 @Entity
@@ -12,12 +13,25 @@ public class Category {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     protected Category() {
     }
 
     public Category(Long id, String name) {
+        this(id, name, null);
+    }
+
+    public Category(Long id, String name, User owner) {
         this.id = id;
         this.name = name;
+        this.owner = owner;
+    }
+
+    public User getOwner() {
+        return owner;
     }
 
     public Long getId() {

@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.example.finance.tracker.security.CurrentUser;
+import static org.mockito.Mockito.lenient;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -35,6 +37,10 @@ class TransactionServiceTest {
     private static final LocalDate DATE = LocalDate.of(2026, 1, 15);
     private static final Category SALARY = new Category(1L, "Salary");
 
+    private static final Long USER_ID = 1L;
+
+    @Mock
+    private CurrentUser currentUser;
     @Mock
     private TransactionRepository transactionRepository;
 
@@ -48,11 +54,13 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(currentUser.id()).thenReturn(USER_ID);
         Clock clock = Clock.fixed(Instant.parse("2026-01-15T10:00:00Z"), ZoneId.of("UTC"));
-        transactionService = new TransactionService(transactionRepository, accountRepository, categoryRepository, clock);
+        transactionService = new TransactionService(transactionRepository, accountRepository, categoryRepository,
+                currentUser, clock);
     }
 
-    /** Account 1 "Main" with the given balance. */
+
     private static Account account(String balance) {
         return new Account(1L, "Main", new BigDecimal(balance), Instant.now());
     }
@@ -62,8 +70,8 @@ class TransactionServiceTest {
     @Test
     void createIncomeAddsMoney() {
         Account account = account("1000.00");
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.create(new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -76,8 +84,8 @@ class TransactionServiceTest {
     @Test
     void createExpenseTakesMoney() {
         Account account = account("1000.00");
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.create(new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.EXPENSE, DATE, null));
@@ -90,8 +98,8 @@ class TransactionServiceTest {
     @Test
     void createSavesTheAccount() {
         Account account = account("1000.00");
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.create(new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -103,8 +111,8 @@ class TransactionServiceTest {
     @Test
     void createWithoutDateUsesToday() {
         Account account = account("1000.00");
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         Transaction result = transactionService.create(
@@ -117,7 +125,7 @@ class TransactionServiceTest {
     //5
     @Test
     void createGives404WhenAccountIsMissing() {
-        when(accountRepository.findById(99L)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             transactionService.create(new TransactionRequest(99L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -133,8 +141,8 @@ class TransactionServiceTest {
     @Test
     void createGives404WhenCategoryIsMissing() {
         Account account = account("1000.00");
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerId(1L, USER_ID)).thenReturn(Optional.of(account));
+        when(categoryRepository.findVisibleById(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             transactionService.create(new TransactionRequest(1L, 99L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -154,8 +162,8 @@ class TransactionServiceTest {
         // 1000.00 + income 100.00 = 1100, update income to 150
         Account account = account("1100.00");
         Transaction old = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.update(5L, new TransactionRequest(1L, 1L, new BigDecimal("150.00"), TransactionType.INCOME, DATE, null));
@@ -170,8 +178,8 @@ class TransactionServiceTest {
         // 1000.00 - expense 100.00 = 900, expense becomes 30.00
         Account account = account("900.00");
         Transaction old = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.EXPENSE, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.update(5L, new TransactionRequest(1L, 1L, new BigDecimal("30.00"), TransactionType.EXPENSE, DATE, null));
@@ -185,8 +193,8 @@ class TransactionServiceTest {
     void updateIncomeToExpense() {
         Account account = account("1100.00");
         Transaction old = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.update(5L, new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.EXPENSE, DATE, null));
@@ -200,8 +208,8 @@ class TransactionServiceTest {
     void updateExpenseToIncome() {
         Account account = account("900.00");
         Transaction old = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.EXPENSE, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(SALARY));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
+        when(categoryRepository.findVisibleById(1L, USER_ID)).thenReturn(Optional.of(SALARY));
         when(transactionRepository.save(any(Transaction.class))).then(returnsFirstArg());
 
         transactionService.update(5L, new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -214,7 +222,7 @@ class TransactionServiceTest {
     @Test
     void updateToAnotherAccountGives400() {
         Transaction old = new Transaction(5L, account("1100.00"), SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
 
         try {
             transactionService.update(5L, new TransactionRequest(2L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -229,7 +237,7 @@ class TransactionServiceTest {
     //6
     @Test
     void updateGives404WhenTransactionIsMissing() {
-        when(transactionRepository.findById(99L)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndAccountOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             transactionService.update(99L, new TransactionRequest(1L, 1L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -246,8 +254,8 @@ class TransactionServiceTest {
     void updateGives404WhenNewCategoryIsMissing() {
         Account account = account("1100.00");
         Transaction old = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(old));
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(old));
+        when(categoryRepository.findVisibleById(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             transactionService.update(5L, new TransactionRequest(1L, 99L, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null));
@@ -266,7 +274,7 @@ class TransactionServiceTest {
     void deleteIncomeTakesTheMoneyBack() {
         Account account = account("1100.00");
         Transaction transaction = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(transaction));
 
         transactionService.delete(5L);
 
@@ -279,7 +287,7 @@ class TransactionServiceTest {
     void deleteExpenseGivesTheMoneyBack() {
         Account account = account("900.00");
         Transaction transaction = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.EXPENSE, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(transaction));
 
         transactionService.delete(5L);
 
@@ -292,7 +300,7 @@ class TransactionServiceTest {
     void deleteRemovesThatTransactionAndSavesTheAccount() {
         Account account = account("1100.00");
         Transaction transaction = new Transaction(5L, account, SALARY, new BigDecimal("100.00"), TransactionType.INCOME, DATE, null);
-        when(transactionRepository.findById(5L)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.findByIdAndAccountOwnerId(5L, USER_ID)).thenReturn(Optional.of(transaction));
 
         transactionService.delete(5L);
 
@@ -304,7 +312,7 @@ class TransactionServiceTest {
     //4
     @Test
     void deleteGives404WhenTransactionIsMissing() {
-        when(transactionRepository.findById(99L)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndAccountOwnerId(99L, USER_ID)).thenReturn(Optional.empty());
 
         try {
             transactionService.delete(99L);
